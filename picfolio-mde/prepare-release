@@ -37,7 +37,16 @@ cp -a . $DIR
 cd /tmp
 tar cvjf $TARGET $DIRNAME --exclude .cvsignore --exclude CVS --exclude prepare-release --exclude-from $ORIG/.cvsignore 
 
-echo
-echo "Available at $TARGET"
-
 rm -rf $DIR
+
+echo
+echo -n "Upload to ftp.berlios.de? "
+read yn
+echo
+if [ "x$yn" != "xy" ]; then
+    echo "Not uploading"
+    echo "Available at $TARGET"
+else
+    curl -v -T $TARGET ftp://ftp.berlios.de/incoming/
+fi
+
