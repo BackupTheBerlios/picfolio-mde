@@ -1,0 +1,295 @@
+#!/usr/bin/python
+#
+# Author: Hugo Haas <hugo@larve.net>
+# License: GPLv2
+
+# Todo:
+# - GTK interface
+
+import sys
+import xml
+import getopt
+from xml.dom.minidom import parse
+
+VERSION = "0.1"
+
+#############################################################################
+
+class Debug:
+    def __init__ (self, print_function, level):
+        self.__level = level
+        self.__print_function = print_function
+
+    def out(self, level, str):
+        if (self.__level >= level):
+            self.__print_function(str)
+
+
+#############################################################################
+
+class UI:
+    def __init__ (self, store, debuglevel):
+        self.store = store
+    
+
+#############################################################################
+
+class Textui(UI):
+    def enter_metadata(self, filename):
+        item = self.store.get_item(filename)
+        if item == None:
+            self.error("%s is not in %s" % filename, self.store.file())
+        self.show_properties(item)
+        self.input_metadata(item)
+
+    def show_properties(self, item):
+        self.info("Information available for %s" % item.get_name())
+        self.info("Title:\n  %s" % item.get_title())
+        self.info("Description:\n  %s" % item.get_description())
+
+    def input_metadata(self, item):
+        self.info("Changing metadata for %s" % item.get_name())
+        title = self.read("Title", item.get_title())
+        if title != None:
+            item.set_title(title)
+        description = self.read("Description", item.get_description())
+        if description != None:
+            item.set_description(description)
+        
+    def read(self, prompt, text):
+        try:
+            import readline
+            readline.add_history(text)
+        except:
+            pass
+        try:
+            input = raw_input(prompt + " > ")
+            # Enter == no changes
+            if input == "":
+                print "Keeping previous value"
+                return None
+            return input
+        except EOFError:
+            print "\nErasing value"
+            # Ctrl-D == delete
+            return ""
+        except KeyboardInterrupt, e:
+            print
+            self.error("Ctrl-C... quitting without saving")
+            sys.exit(2)
+
+    def info(self, str):
+        print "-=- %s" % str
+
+    def error(self, str):
+        print "ERROR: %s" % str
+
+    def debug_out(self, str):
+        print "*** %s" % str
+
+#############################################################################
+
+class Commandline(Textui):
+    def enter_metadata(self, filename, has_title, title, has_desc, description):
+        item = self.store.get_item(filename)
+        if item == None:
+            self.error("Skipping %s" % filename)
+            return
+        if has_title and title != None:
+            self.info("Changing `%s' into `%s' for %s" % (item.get_title(), title, filename))
+            item.set_title(title)
+        if has_desc and description != None:
+            self.info("Changing `%s' into `%s' for %s" % (item.get_description(), description, filename))
+            item.set_description(description)
+
+#############################################################################
+
+class Item:
+    def __init__(self, store, node):
+        self.__store = store
+        self.__node = node
+
+    def get_name(self):
+        if self.__node.tagName == "directory":
+            return self.__node.tagName
+        elif self.__node.tagName == "image":
+            return self.__node.getAttribute("name")
+        else:
+            raise UnknownElementError
+
+    def get_title(self):
+        return self.__node.getAttribute("title")
+
+    def set_title(self, value):
+        if value == self.get_title():
+            return
+        if value == "":
+            self.__node.removeAttribute("title")
+        else:
+            self.__node.setAttribute("title", value)
+        self.__store.dirty()
+
+    def __get_description_element(self):
+        children = self.__node.childNodes
+        for node in children:
+            # Here I assume that description is a text node; I am not sure
+            # it's a good assumption
+            if node.nodeType == xml.dom.Node.ELEMENT_NODE and node.tagName == "description":
+                return node
+            else:
+                return None
+        return None
+
+    def get_description(self):
+        desc_element = self.__get_description_element()
+        if desc_element != None and desc_element.hasChildNodes() and desc_element.firstChild.nodeType == xml.dom.Node.TEXT_NODE:
+            return desc_element.firstChild.data
+        else:
+            return None
+
+    def set_description(self, value):
+        if value == self.get_description():
+            return
+        desc_element = self.__get_description_element()
+        if desc_element == None:
+            desc = self.__store.dom.createElement("description")
+            desctext = self.__store.dom.createTextNode(value)
+            desc.appendChild(desctext)
+            if self.__node.firstChild:
+                self.__node.insertBefore(desc, self.__node.firstChild)
+            else:
+                self.__node.appendChild(desc)
+        else:
+            if value != "":
+                desc_element.firstChild.data = value
+            else:
+                self.__node.removeChild(desc_element)
+        self.__store.dirty()
+        
+#############################################################################
+
+class Store:
+    def __init__(self, filename):
+        self.__filename = filename
+        self.__dirty = 0
+        try:
+            self.dom = parse(filename)
+        except IOError, e:
+            print "Couldn't open %s: %s" % (filename, e)
+            print "Run picfolio first"
+            sys.exit(1)
+        self.__image_name_list = self.__get_image_list()
+
+    def __get_image_list(self):
+        list = [ ]
+        for img in self.dom.getElementsByTagName("image"):
+            list = list + [ img.getAttribute("name") ]
+        return list
+
+    def get_item(self, filename):
+        if (filename == None):
+            return self.get_directory()
+        else:
+            return self.get_image(filename)
+
+    def get_directory(self):
+        return Item(self, self.dom.documentElement)
+
+    def get_image(self, name):
+        if name not in self.__image_name_list:
+            return None
+        else:
+            for img in self.dom.getElementsByTagName("image"):
+                if img.getAttribute("name") != name:
+                    continue
+                return Item(self, img)
+
+    def file(self):
+        return self.__filename
+
+    def dirty(self):
+        self.__dirty = 1
+
+    def save(self, p):
+        if self.__dirty:
+            try:
+                f = open(self.__filename, "w")
+                f.write(self.dom.toxml())
+                f.close()
+            except IOError, e:
+                print "Couldn't write changes to %s: %s" % (self.__filename, e)
+            p("Wrote changes to %s" % self.__filename)
+        else:
+            p("No save necessary")
+        return
+
+#############################################################################
+
+def usage(exitcode = 0):
+    print "picfolio-metadata %s" % VERSION
+    print "(c) 2003-2004 Hugo Haas <hugo@larve.net>"
+    print """
+Usage:
+  picfolio-metadata [options] <image name> <image name> ...
+
+Options:
+-f, --file=		specify the file where meta-data is stored
+			(default: picfolio/picfolio.xml)
+-D, --directory		set the metadata for the directory
+-t, --title=		specify the title for the object
+-d, --description=	specify the description for the object
+-h, --help		this message
+"""
+    sys.exit(exitcode)
+
+def main():
+    file = "picfolio/picfolio.xml"
+
+    args = sys.argv[1:]
+    # optlist broke -d / -D
+    try:
+        optlist, args = getopt.getopt(args, 'f:t:d:Dh',
+                                      ["title=",
+                                       "description=",
+                                       "directory",
+                                       "help"])
+    except getopt.error, msg:
+        print >>sys.stderr, "ERROR: %s\n" % msg
+        usage(2)
+    cli = 0
+    directory = 0
+    has_title = 0
+    has_desc = 0
+    title = None
+    description = None
+    for o in optlist:
+        name = o[0]
+        value = o[1]
+        if name in ('-f', '--file'):
+            file = value
+        elif name in ('-t', '--title'):
+            cli = 1
+            has_title = 1
+            title = value
+        elif name in ('-d', '--description'):
+            cli = 1
+            has_desc = 1
+            description = value
+        elif name in ('-D', '--directory'):
+            args = args + [ None ]
+        elif name in ('-h', '--help'):
+            usage()
+    picfolio = Store(file)
+    if cli:
+        ui = Commandline(picfolio, 5)
+        for arg in args:
+            ui.enter_metadata(arg, has_title, title, has_desc, description)
+    else:
+        ui = Textui(picfolio, 5)
+        for arg in args:
+            ui.enter_metadata(arg)
+    picfolio.save(ui.info)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
