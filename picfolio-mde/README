@@ -3,3 +3,7 @@ Picfolio metadata editer (picfolio-mde)
 Read about it at:
 
     http://larve.net/people/hugo/2004/01/picfolio-metadata-editor.html
+
+Minimum requirements:
+- Python 2.3.4
+- Python GTK 2.2.0
