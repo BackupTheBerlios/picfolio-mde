@@ -24,6 +24,7 @@ class TextInterface(UI):
         description = self.read("Description", item.get_description())
         if description != None:
             item.set_description(description)
+        self.save_previous(item)
         
     def read(self, prompt, text):
         try:

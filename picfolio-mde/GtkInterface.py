@@ -29,6 +29,7 @@ class GtkInterface(UI):
                 "on_save1_activate" : self.save_store,
                 "on_main_destroy" : self.die,
                 "on_SaveButton_clicked" : self.savenext,
+                "on_SameButton_clicked" : self.samenext,
                 "on_SkipButton_clicked" : self.next,
                 "on_about1_activate" : self.about,
                 "on_closebutton1_clicked" : self.about_close,
@@ -40,6 +41,7 @@ class GtkInterface(UI):
         self.desc = self.gladexml.get_widget("DescriptionField")
         self.image = self.gladexml.get_widget("Image")
         self.saveButton= self.gladexml.get_widget("SaveButton")
+        self.sameButton= self.gladexml.get_widget("SameButton")
         self.skipButton= self.gladexml.get_widget("SkipButton")
         self.aboutbox= self.gladexml.get_widget("AboutBox")
         self.progressBar = self.gladexml.get_widget("AnswerProgress")
@@ -94,6 +96,7 @@ class GtkInterface(UI):
         self.show_image()
         if len(self.args) == 1:
             self.saveButton.set_label("Save and quit")
+            self.sameButton.set_label("Same and quit")
             self.skipButton.set_label("Skip and quit")
             self.progressBar.set_fraction(1)
         else:
@@ -106,7 +109,15 @@ class GtkInterface(UI):
         item.set_description(self.desc.get_text())
         self.next(obj)
 
+    def samenext(self, obj):
+        item = self.get_previous()
+        self.title.set_text(item.get_title(1))
+        self.desc.set_text(item.get_description(1))
+        self.savenext(obj)
+
     def next(self, obj):
+        item = self.store.get_item(self.filename)
+        self.save_previous(item)
         if len(self.args) > 0:
             self.show_picturedata(self.args[0])
             self.args = self.args[1:]
