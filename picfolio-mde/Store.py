@@ -2,17 +2,19 @@
 # License: GPLv2
 
 import xml
+import os.path
 from xml.dom.minidom import parse
 from Item import Item
 
 class Store:
-    def __init__(self, filename):
-        self.__filename = filename
+    def __init__(self, dirname):
+        self.__filename = dirname + '/picfolio/picfolio.xml'
+        self.__dirname = os.path.abspath(dirname)
         self.__dirty = 0
         try:
-            self.dom = parse(filename)
+            self.dom = parse(self.__filename)
         except IOError, e:
-            print "Couldn't open %s: %s" % (filename, e)
+            print "Couldn't open %s: %s" % (self.__filename, e)
             print "Run picfolio first"
             sys.exit(1)
         self.__image_name_list = self.__get_image_list()
@@ -22,6 +24,9 @@ class Store:
         for img in self.dom.getElementsByTagName("image"):
             list = list + [ img.getAttribute("name") ]
         return list
+
+    def directory(self):
+        return self.__dirname
 
     def get_item(self, filename):
         if (filename == None):

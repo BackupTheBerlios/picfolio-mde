@@ -106,17 +106,19 @@ class GtkInterface(UI):
 
     def show_picturedata(self, filename):
         self.filename = filename
-        item = self.store.get_item(filename)
+        item = self.stores.get_item(filename, self)
         if item == None:
             self.error("%s is not in %s" % filename, self.store.file())
         self.name.set_text(item.get_name())
         self.__combo_show(self.title, item.get_title(1))
         self.__combo_show(self.desc, item.get_description(1))
         self.title.grab_focus()
-        if filename != None:
-            self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_name())
+        if not item.isdir():
+            self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_fullname())
+            self.image.show()
         else:
             self.pixbuf = None
+            self.image.hide()
         self.show_image()
         if len(self.args) == 1:
             self.saveButton.set_label("Save and quit")
@@ -128,7 +130,7 @@ class GtkInterface(UI):
         self.info("%s info loaded" % filename)
 
     def save(self, obj):
-        item = self.store.get_item(self.filename)
+        item = self.stores.get_item(self.filename, self)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
         item.set_description(self.desc.entry.get_text())
@@ -149,7 +151,7 @@ class GtkInterface(UI):
         self.savenext(obj)
 
     def next(self, obj):
-        item = self.store.get_item(self.filename)
+        item = self.stores.get_item(self.filename, self)
         self.save_previous(item)
         if len(self.args) > 0:
             self.show_picturedata(self.args[0])

@@ -6,7 +6,7 @@ import sys
 
 class TextInterface(UI):
     def enter_metadata(self, filename):
-        item = self.store.get_item(filename)
+        item = self.stores.get_item(filename, self)
         if item == None:
             self.error("%s is not in %s" % filename, self.store.file())
         self.show_properties(item)

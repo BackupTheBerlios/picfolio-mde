@@ -9,13 +9,25 @@ class Item:
         self.__store = store
         self.__node = node
 
-    def get_name(self):
+    def isdir(self):
         if self.__node.tagName == "directory":
-            return self.__node.tagName
+            return 1
+        else:
+            return 0
+            
+    def get_name(self):
+        if self.isdir():
+            return self.get_fullname()
         elif self.__node.tagName == "image":
             return self.__node.getAttribute("name")
         else:
             raise UnknownElementError
+
+    def get_fullname(self):
+        if self.isdir():
+            return self.__store.directory()
+        else:
+            return self.__store.directory() + '/' + self.get_name()
 
     def get_title(self, nonone = 0):
         value = self.__node.getAttribute("title")

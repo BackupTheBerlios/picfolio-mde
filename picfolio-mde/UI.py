@@ -2,8 +2,9 @@
 # License: GPLv2
 
 class UI:
-    def __init__ (self, store):
-        self.store = store
+    def __init__ (self, stores):
+        self.stores = stores
+        self.store = None
         self.prevous_item = None
 
     def save_previous (self, item):
