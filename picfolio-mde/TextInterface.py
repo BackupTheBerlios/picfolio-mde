@@ -25,7 +25,7 @@ class TextInterface(UI):
             item.set_title(title)
         valid = 0
         while not valid:
-            description = self.read("Description (HTML)", item.get_description())
+            description = self.read("Description (XHTML 1.0)", item.get_description())
             if description != None:
                 try:
                     item.set_description(description)
