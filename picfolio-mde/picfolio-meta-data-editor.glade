@@ -6,12 +6,16 @@
 <widget class="GtkWindow" id="MainWindow">
   <property name="width_request">750</property>
   <property name="visible">True</property>
-  <property name="title" translatable="yes">window1</property>
+  <property name="title" translatable="yes">Picfolio Metadata Editor</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
+  <accessibility>
+    <atkproperty name="AtkObject::accessible_name" translatable="yes">Picfolio Metadata Editor</atkproperty>
+    <atkproperty name="AtkObject::accessible_description" translatable="yes">Main window</atkproperty>
+  </accessibility>
   <signal name="destroy" handler="on_main_destroy" last_modification_time="Sat, 10 Jan 2004 09:31:51 GMT"/>
 
   <child>
@@ -439,6 +443,23 @@
 		  <property name="fill">False</property>
 		</packing>
 	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="button1">
+		  <property name="visible">True</property>
+		  <property name="can_focus">True</property>
+		  <property name="label" translatable="yes">Save and quit (Ctrl+W)</property>
+		  <property name="use_underline">True</property>
+		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <signal name="clicked" handler="on_saveandquit_activate" last_modification_time="Fri, 02 Apr 2004 10:45:19 GMT"/>
+		  <accelerator key="w" modifiers="GDK_CONTROL_MASK" signal="clicked"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
 	    </widget>
 	    <packing>
 	      <property name="shrink">True</property>
@@ -530,13 +551,16 @@
 </widget>
 
 <widget class="GtkDialog" id="AboutBox">
-  <property name="title" translatable="yes">dialog1</property>
+  <property name="title" translatable="yes">About Picfolio Metadata Editor</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="has_separator">True</property>
+  <accessibility>
+    <atkproperty name="AtkObject::accessible_name" translatable="yes">About Picfolio Metadata Editor</atkproperty>
+  </accessibility>
 
   <child internal-child="vbox">
     <widget class="GtkVBox" id="dialog-vbox1">
