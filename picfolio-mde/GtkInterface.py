@@ -33,6 +33,7 @@ class GtkInterface(UI):
                 "on_SkipButton_clicked" : self.next,
                 "on_about1_activate" : self.about,
                 "on_closebutton1_clicked" : self.about_close,
+                "on_saveandquit_activate" : self.savequit,
                 }
         self.gladexml.signal_autoconnect(dic)
         self.status = self.gladexml.get_widget("Status")
@@ -100,6 +101,7 @@ class GtkInterface(UI):
 
     def __combo_show(self, combo, value):
         combo.entry.set_text(value)
+        combo.entry.select_region(0, -1)
         self.__combo_add_entry(combo, value)
 
     def show_picturedata(self, filename):
@@ -125,14 +127,20 @@ class GtkInterface(UI):
             self.progressBar.set_fraction(self.progressBar.get_fraction() + self.progress_step)
         self.info("%s info loaded" % filename)
 
-    def savenext(self, obj):
+    def save(self, obj):
         item = self.store.get_item(self.filename)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
         item.set_description(self.desc.entry.get_text())
-        self.__combo_add_entry(self.desc, self.desc.entry.get_text())
+
+    def savenext(self, obj):
+        self.savenext(obj)
         self.next(obj)
         self.saveable(self.store.is_dirty())
+
+    def savequit(self, obj):
+        self.save(obj)
+        self.quit(obj)
 
     def samenext(self, obj):
         item = self.get_previous()
