@@ -19,6 +19,16 @@ if [ "x$yn" != "xy" ]; then
     exit
 fi
 
+TAG=`echo $VERSION | sed -e 's/\./_/g' -e 's/^/release_/'`
+echo -n "Tag files with '$TAG'? "
+read yn
+echo
+if [ "x$yn" != "xy" ]; then
+    echo "Not tagging."
+else
+    cvs rtag $TAG .
+fi
+
 DIRNAME=picfolio-mde-$VERSION
 DIR=/tmp/$DIRNAME
 TARGET=/tmp/$DIRNAME.tar.bz2
