@@ -19,10 +19,11 @@ GLADE_INTERFACE = re.sub("(/)?[^/]+$", "\\1picfolio-meta-data-editor.glade", sys
 
 class GtkInterface(UI):
 
-    def __init__ (self, store, pics):
+    def __init__ (self, store, pics, edit_markup):
         if has_gtk == 0:
             raise GtkUnavailable
         UI.__init__(self, store)
+        self.edit_markup = edit_markup
         self.gladexml = gtk.glade.XML(GLADE_INTERFACE)
         dic = { "on_quit1_activate" : self.quit,
                 "on_quit_without_saving2_activate" : self.die,
@@ -111,7 +112,7 @@ class GtkInterface(UI):
             self.error("%s is not in %s" % filename, self.store.file())
         self.name.set_text(item.get_name())
         self.__combo_show(self.title, item.get_title(1))
-        self.__combo_show(self.desc, item.get_description(1))
+        self.__combo_show(self.desc, item.get_description(1, self.edit_markup))
         self.title.grab_focus()
         if not item.isdir():
             self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_fullname())
@@ -133,10 +134,10 @@ class GtkInterface(UI):
         item = self.stores.get_item(self.filename, self)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
-        item.set_description(self.desc.entry.get_text())
+        item.set_description(self.desc.entry.get_text(), self.edit_markup)
 
     def savenext(self, obj):
-        self.savenext(obj)
+        self.save(obj)
         self.next(obj)
         self.saveable(self.stores.is_dirty())
 
@@ -145,14 +146,14 @@ class GtkInterface(UI):
         self.quit(obj)
 
     def samenext(self, obj):
-        item = self.get_previous()
-        self.title.set_text(item.get_title(1))
-        self.desc.set_text(item.get_description(1))
-        self.savenext(obj)
+        item = UI.get_previous(self)
+        self.title.entry.set_text(item.get_title(1))
+        self.desc.entry.set_text(item.get_description(1, self.edit_markup))
+        self.next(obj)
 
     def next(self, obj):
         item = self.stores.get_item(self.filename, self)
-        self.save_previous(item)
+        UI.save_previous(self, item)
         if len(self.args) > 0:
             self.show_picturedata(self.args[0])
             self.args = self.args[1:]

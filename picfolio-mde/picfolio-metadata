@@ -23,6 +23,7 @@ Options:
 			(default: picfolio/picfolio.xml)
 -t, --title=		specify the title for the object
 -d, --description=	specify the description for the object
+-m, --markup		edit mark-up for description instead of simple text
 -g			graphical interface
 -h, --help		this message
 """
@@ -32,10 +33,11 @@ def main():
     args = sys.argv[1:]
     # optlist broke -d / -D
     try:
-        optlist, args = getopt.getopt(args, 'f:t:d:Dgh',
+        optlist, args = getopt.getopt(args, 'f:t:d:Dmgh',
                                       ["title=",
                                        "description=",
                                        "directory",
+                                       "markup",
                                        "gtk",
                                        "help"])
     except getopt.error, msg:
@@ -46,6 +48,7 @@ def main():
     has_title = 0
     has_desc = 0
     use_gtk = 0
+    edit_markup = 0
     title = None
     description = None
     for o in optlist:
@@ -65,6 +68,8 @@ def main():
             args = [ None ] + args
         elif name in ('-g', '--gtk'):
             use_gtk = 1
+        elif name in ('-m', '--markup'):
+            edit_markup = 1
         elif name in ('-h', '--help'):
             usage()
     stores = StoreCollection()
@@ -74,7 +79,7 @@ def main():
             ui.enter_metadata(arg, has_title, title, has_desc, description)
     elif use_gtk:
         try:
-            ui = GtkInterface(stores, args)
+            ui = GtkInterface(stores, args, edit_markup)
             # Not reached
             sys.exit(0)
         except GtkUnavailable:
