@@ -83,6 +83,11 @@ class GtkInterface(UI):
     def __combo_add_entry(self, combo, value):
         if value == "":
             return
+        for c in combo.list.get_children():
+            for cc in c.get_children():
+                l = cc.get()
+                if l == value:
+                    return
         list_item = gtk.ListItem(value)
         list_item.show()
         combo.list.prepend_items([ list_item ])
