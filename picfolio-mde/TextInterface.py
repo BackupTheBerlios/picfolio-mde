@@ -2,6 +2,7 @@
 # License: GPLv2
 
 from UI import UI
+import sys
 
 class TextInterface(UI):
     def enter_metadata(self, filename):
