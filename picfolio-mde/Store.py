@@ -5,6 +5,7 @@ import xml
 import os.path
 from xml.dom.minidom import parse
 from Item import Item
+import sys
 
 class Store:
     def __init__(self, dirname):

@@ -10,6 +10,7 @@ from CommandlineInterface import CommandlineInterface
 from TextInterface import TextInterface
 from GtkInterface import GtkInterface,GtkUnavailable
 import Version
+import os.path
 
 def usage(exitcode = 0):
     print "picfolio-metadata %s" % Version.v
@@ -30,12 +31,10 @@ Options:
 
 def main():
     args = sys.argv[1:]
-    # optlist broke -d / -D
     try:
-        optlist, args = getopt.getopt(args, 'f:t:d:Dmgh',
+        optlist, args = getopt.getopt(args, 'f:t:d:mgh',
                                       ["title=",
                                        "description=",
-                                       "directory",
                                        "gtk",
                                        "help"])
     except getopt.error, msg:
@@ -61,20 +60,25 @@ def main():
             cli = 1
             has_desc = 1
             description = value
-        elif name in ('-D', '--directory'):
-            args = [ None ] + args
         elif name in ('-g', '--gtk'):
             use_gtk = 1
         elif name in ('-h', '--help'):
             usage()
+    files = [ ]
+    for arg in args:
+        if os.path.exists(arg):
+            files.append(arg)
+        else:
+            print "ERROR: %s does not exist; removing from list" % arg
     stores = StoreCollection()
     if cli:
         ui = CommandlineInterface(stores)
-        for arg in args:
+        for arg in files:
+            print "Arg: \"%s\""
             ui.enter_metadata(arg, has_title, title, has_desc, description)
     elif use_gtk:
         try:
-            ui = GtkInterface(stores, args)
+            ui = GtkInterface(stores, files)
             # Not reached
             sys.exit(0)
         except GtkUnavailable:
@@ -82,7 +86,7 @@ def main():
             sys.exit(1)
     else:
         ui = TextInterface(stores)
-        for arg in args:
+        for arg in files:
             ui.enter_metadata(arg)
     stores.save(ui.info)
     sys.exit(0)
