@@ -3,6 +3,7 @@
 
 from UI import UI
 import sys
+from Item import NotValid
 
 class TextInterface(UI):
     def enter_metadata(self, filename):
@@ -22,10 +23,17 @@ class TextInterface(UI):
         title = self.read("Title", item.get_title())
         if title != None:
             item.set_title(title)
-        description = self.read("Description", item.get_description())
-        if description != None:
-            item.set_description(description)
-        self.save_previous(item)
+        valid = 0
+        while not valid:
+            description = self.read("Description", item.get_description())
+            if description != None:
+                try:
+                    item.set_description(description)
+                except NotValid:
+                    self.error("Data not valid")
+                    valid = 0
+                else:
+                    valid = 1
         
     def read(self, prompt, text):
         try:
@@ -34,7 +42,7 @@ class TextInterface(UI):
         except:
             pass
         try:
-            input = raw_input(prompt + " > ")
+            input = raw_input(prompt + ": ")
             # Enter == no changes
             if input == "":
                 print "Keeping previous value"

@@ -46,92 +46,60 @@ class Item:
             self.__node.setAttribute("title", value)
         self.__store.dirty()
 
-    def __get_description_element(self, simple = 1):
+    def __get_description_element(self):
         children = self.__node.childNodes
         for node in children:
             if node.nodeType != xml.dom.Node.ELEMENT_NODE or node.tagName != "description":
                 continue
-            if not simple:
-                return node
-            # We assume that the description element is either:
-            # <description>foo</description>
-            # or:
-            # <description><para>foo</para></description>
-            if node.hasChildNodes() and len(node.childNodes) == 1:
-                if xmlutils.hasChildTextNode(node):
-                    return node
-                child = node.firstChild
-                if child.nodeType == xml.dom.Node.ELEMENT_NODE and child.tagName == "para" and xmlutils.hasChildTextNode(child):
-                    return node
-            else:
-                return node
+            return node
         return None
 
-    def get_description(self, nonone = 0, markup = 0):
-        desc_element = self.__get_description_element(not markup)
+    def get_description(self, nonone = 0):
+        desc_element = self.__get_description_element()
         if desc_element == None:
             value = None
-        elif markup:
+        else:
             if not desc_element.hasChildNodes():
                 value = ""
             else:
                 value = desc_element.toxml()
                 value = re.sub("^<description>|</description>$", "",
                                value)
-        elif desc_element.hasChildNodes():
-            if desc_element.firstChild.nodeType == xml.dom.Node.ELEMENT_NODE:
-                # para
-                node = desc_element.firstChild
-            else:
-                # no para
-                node = desc_element
-            value = xmlutils.getChildTextNode(node)
-        else:
-            value = None
         if nonone and value == None:
             value = ""
         return value
 
     def string_to_description(self, value):
         s = "<description>" + value + "</description>"
-        dom = parseString(s)
+        try:
+            dom = parseString(s)
+        except xml.parsers.expat.ExpatError:
+            raise NotValid
         desc_element = dom.getElementsByTagName("description")[0]
+        # Here, I am assuming that the content of the description element
+        # is plain old XHTML; we have a namespace issue here; I need
+        # to discuss that on the Picfolio mailing list
         return desc_element
 
-    def set_description(self, value, markup = 0):
+    def set_description(self, value):
         if value == self.get_description():
             return
-        desc_element = self.__get_description_element(markup)
+        desc_element = self.__get_description_element()
         if value != "":
             # Preparing element
-            new_desc = None
-            if markup:
-                new_desc = self.string_to_description(value)
+            desc = self.string_to_description(value)
+            if desc_element != None:
+                self.__node.removeChild(desc_element)
+            # Place it first
+            if self.__node.hasChildNodes():
+                self.__node.insertBefore(desc, self.__node.firstChild)
             else:
-                # Creating: <description><para>foo</para></description>
-                new_desc = self.__store.dom.createElement("para")
-                desctext = self.__store.dom.createTextNode(value)
-                new_desc.appendChild(desctext)
-            # Inserting data
-            if not markup and desc_element != None:
-                # Replacing 
-                desc_element.removeChild(desc_element.firstChild)
-                desc_element.appendChild(new_desc)
-            else:
-                desc = None
-                if markup:
-                    if desc_element != None:
-                        self.__node.removeChild(desc_element)
-                    desc = new_desc
-                else:
-                    desc = self.__store.dom.createElement("description")
-                    desc.appendChild(new_desc)
-                # Place it first
-                if self.__node.hasChildNodes():
-                    self.__node.insertBefore(desc, self.__node.firstChild)
-                else:
-                    self.__node.appendChild(desc)
+                self.__node.appendChild(desc)
         else:
             if desc_element != None:
                 self.__node.removeChild(desc_element)
         self.__store.dirty()
+
+class NotValid(Exception):
+    """Data is not valid."""
+    pass

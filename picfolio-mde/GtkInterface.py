@@ -12,6 +12,7 @@ except:
     has_gtk = 0
 from UI import UI
 import Version
+from Item import NotValid
 
 # This should not depend on sys.argv[0]; GtkInterface could be used in lots
 # of different ways @@@
@@ -19,11 +20,10 @@ GLADE_INTERFACE = re.sub("(/)?[^/]+$", "\\1picfolio-meta-data-editor.glade", sys
 
 class GtkInterface(UI):
 
-    def __init__ (self, store, pics, edit_markup):
+    def __init__ (self, store, pics):
         if has_gtk == 0:
             raise GtkUnavailable
         UI.__init__(self, store)
-        self.edit_markup = edit_markup
         self.gladexml = gtk.glade.XML(GLADE_INTERFACE)
         dic = { "on_quit1_activate" : self.quit,
                 "on_quit_without_saving2_activate" : self.die,
@@ -112,7 +112,7 @@ class GtkInterface(UI):
             self.error("%s is not in %s" % filename, self.store.file())
         self.name.set_text(item.get_name())
         self.__combo_show(self.title, item.get_title(1))
-        self.__combo_show(self.desc, item.get_description(1, self.edit_markup))
+        self.__combo_show(self.desc, item.get_description(1))
         self.title.grab_focus()
         if not item.isdir():
             self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_fullname())
@@ -134,26 +134,35 @@ class GtkInterface(UI):
         item = self.stores.get_item(self.filename, self)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
-        item.set_description(self.desc.entry.get_text(), self.edit_markup)
+        item.set_description(self.desc.entry.get_text())
+        self.__combo_add_entry(self.desc, self.desc.entry.get_text())
 
     def savenext(self, obj):
-        self.save(obj)
+        try:
+            self.save(obj)
+        except NotValid:
+            self.error("Data not valid")
+            return
+        UI.save_previous(self, item)
         self.next(obj)
         self.saveable(self.stores.is_dirty())
 
     def savequit(self, obj):
-        self.save(obj)
+        try:
+            self.save(obj)
+        except NotValid:
+            self.error("Data not valid")
+            return
         self.quit(obj)
 
     def samenext(self, obj):
         item = UI.get_previous(self)
         self.title.entry.set_text(item.get_title(1))
-        self.desc.entry.set_text(item.get_description(1, self.edit_markup))
+        self.desc.entry.set_text(item.get_description(1))
         self.next(obj)
 
     def next(self, obj):
         item = self.stores.get_item(self.filename, self)
-        UI.save_previous(self, item)
         if len(self.args) > 0:
             self.show_picturedata(self.args[0])
             self.args = self.args[1:]
