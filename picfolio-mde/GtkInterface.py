@@ -80,14 +80,25 @@ class GtkInterface(UI):
             w = h * image_ratio
         self.image.set_from_pixbuf(pb.scale_simple(int(w), int(h), gtk.gdk.INTERP_NEAREST))
 
+    def __combo_add_entry(self, combo, value):
+        if value == "":
+            return
+        list_item = gtk.ListItem(value)
+        list_item.show()
+        combo.list.prepend_items([ list_item ])
+
+    def __combo_show(self, combo, value):
+        combo.entry.set_text(value)
+        self.__combo_add_entry(combo, value)
+
     def show_picturedata(self, filename):
         self.filename = filename
         item = self.store.get_item(filename)
         if item == None:
             self.error("%s is not in %s" % filename, self.store.file())
         self.name.set_text(item.get_name())
-        self.title.set_text(item.get_title(1))
-        self.desc.set_text(item.get_description(1))
+        self.__combo_show(self.title, item.get_title(1))
+        self.__combo_show(self.desc, item.get_description(1))
         self.title.grab_focus()
         if filename != None:
             self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_name())
@@ -105,8 +116,10 @@ class GtkInterface(UI):
 
     def savenext(self, obj):
         item = self.store.get_item(self.filename)
-        item.set_title(self.title.get_text())
-        item.set_description(self.desc.get_text())
+        item.set_title(self.title.entry.get_text())
+        self.__combo_add_entry(self.title, self.title.entry.get_text())
+        item.set_description(self.desc.entry.get_text())
+        self.__combo_add_entry(self.desc, self.desc.entry.get_text())
         self.next(obj)
 
     def samenext(self, obj):
