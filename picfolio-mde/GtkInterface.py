@@ -139,7 +139,9 @@ class GtkInterface(UI):
         item = self.stores.get_item(self.filename, self)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
-        item.set_description(self.desc.get_buffer().get_text())
+        item.set_description(self.desc.get_buffer().get_text(
+            self.desc.get_buffer().get_start_iter(),
+            self.desc.get_buffer().get_end_iter()))
 
     def savenext(self, obj):
         try:
