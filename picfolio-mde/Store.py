@@ -53,8 +53,9 @@ class Store:
                 f = open(self.__filename, "w")
                 f.write(self.dom.toxml())
                 f.close()
+                self.__dirty = 0
             except IOError, e:
-                print "Couldn't write changes to %s: %s" % (self.__filename, e)
+                p("Couldn't write changes to %s: %s" % (self.__filename, e))
             p("Wrote changes to %s" % self.__filename)
         else:
             p("No save necessary")
