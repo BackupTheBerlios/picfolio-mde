@@ -25,7 +25,7 @@ class TextInterface(UI):
             item.set_title(title)
         valid = 0
         while not valid:
-            description = self.read("Description", item.get_description())
+            description = self.read("Description (HTML)", item.get_description())
             if description != None:
                 try:
                     item.set_description(description)
@@ -42,7 +42,7 @@ class TextInterface(UI):
         except:
             pass
         try:
-            input = raw_input(prompt + ": ")
+            input = raw_input(prompt + ":\n")
             # Enter == no changes
             if input == "":
                 print "Keeping previous value"
