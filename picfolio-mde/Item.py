@@ -55,7 +55,7 @@ class Item:
 
     def get_description(self, nonone = 0):
         desc_element = self.__get_description_element()
-        if desc_element != None:
+        if desc_element != None and desc_element.hasChildNodes():
             if desc_element.firstChild.nodeType == xml.dom.Node.ELEMENT_NODE:
                 # para
                 node = desc_element.firstChild
