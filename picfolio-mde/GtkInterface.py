@@ -105,6 +105,11 @@ class GtkInterface(UI):
         combo.entry.select_region(0, -1)
         self.__combo_add_entry(combo, value)
 
+    def __textview_set(self, textview, value):
+        buff = gtk.TextBuffer()
+        buff.set_text(value)
+        textview.set_buffer(buff)
+
     def show_picturedata(self, filename):
         self.filename = filename
         item = self.stores.get_item(filename, self)
@@ -112,7 +117,7 @@ class GtkInterface(UI):
             self.error("%s is not in %s" % filename, self.store.file())
         self.name.set_text(item.get_name())
         self.__combo_show(self.title, item.get_title(1))
-        self.__combo_show(self.desc, item.get_description(1))
+        self.__textview_set(self.desc, item.get_description(1))
         self.title.grab_focus()
         if not item.isdir():
             self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_fullname())
@@ -134,8 +139,7 @@ class GtkInterface(UI):
         item = self.stores.get_item(self.filename, self)
         item.set_title(self.title.entry.get_text())
         self.__combo_add_entry(self.title, self.title.entry.get_text())
-        item.set_description(self.desc.entry.get_text())
-        self.__combo_add_entry(self.desc, self.desc.entry.get_text())
+        item.set_description(self.desc.get_buffer().get_text())
 
     def savenext(self, obj):
         try:
@@ -144,6 +148,7 @@ class GtkInterface(UI):
             self.error("Data not valid")
             return
         UI.save_previous(self, item)
+        self.samenext.is_sensitive(1)
         self.next(obj)
         self.saveable(self.stores.is_dirty())
 
@@ -158,7 +163,7 @@ class GtkInterface(UI):
     def samenext(self, obj):
         item = UI.get_previous(self)
         self.title.entry.set_text(item.get_title(1))
-        self.desc.entry.set_text(item.get_description(1))
+        self.__textview_set(self.desc, item.get_description(1))
         self.next(obj)
 
     def next(self, obj):
