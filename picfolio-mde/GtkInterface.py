@@ -61,6 +61,12 @@ class GtkInterface(UI):
     def about(self, obj):
         self.aboutbox.run()
 
+    def saveable(self, s):
+        button = self.gladexml.get_widget("SaveToStore")
+        menuentry = self.gladexml.get_widget("save1")
+        button.set_sensitive(s)
+        menuentry.set_sensitive(s)
+
     def about_close(self,obj):
         self.aboutbox.hide()
 
@@ -126,6 +132,7 @@ class GtkInterface(UI):
         item.set_description(self.desc.entry.get_text())
         self.__combo_add_entry(self.desc, self.desc.entry.get_text())
         self.next(obj)
+        self.saveable(self.store.is_dirty())
 
     def samenext(self, obj):
         item = self.get_previous()
@@ -144,6 +151,7 @@ class GtkInterface(UI):
 
     def save_store(self, obj):
         self.store.save(self.info)
+        self.saveable(self.store.is_dirty())
 
     def status_show(self, context, str):
         cid = self.status.get_context_id(context)

@@ -36,6 +36,7 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="save1">
 		      <property name="visible">True</property>
+		      <property name="sensitive">False</property>
 		      <property name="label">gtk-save</property>
 		      <property name="use_stock">True</property>
 		      <signal name="activate" handler="on_save1_activate" last_modification_time="Sat, 10 Jan 2004 08:48:49 GMT"/>
@@ -415,6 +416,25 @@
 		</widget>
 		<packing>
 		  <property name="padding">2</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="SaveToStore">
+		  <property name="visible">True</property>
+		  <property name="sensitive">False</property>
+		  <property name="tooltip" translatable="yes">Commits changes to the XML file</property>
+		  <property name="can_focus">True</property>
+		  <property name="label" translatable="yes">Save changes to file (F2)</property>
+		  <property name="use_underline">True</property>
+		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <signal name="clicked" handler="on_save1_activate" last_modification_time="Sun, 25 Jan 2004 15:47:12 GMT"/>
+		  <accelerator key="F2" modifiers="0" signal="clicked"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
 		  <property name="expand">False</property>
 		  <property name="fill">False</property>
 		</packing>

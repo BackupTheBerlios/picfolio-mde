@@ -44,6 +44,9 @@ class Store:
     def file(self):
         return self.__filename
 
+    def is_dirty(self):
+        return self.__dirty
+
     def dirty(self):
         self.__dirty = 1
 
