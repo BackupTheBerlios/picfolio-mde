@@ -36,8 +36,6 @@ class StoreCollection:
         return store.get_item(filename)
 
     def getstore(self, filename):
-        print filename
-        print self.__getdirname(filename)
         try:
             store = self.__stores[self.__getdirname(filename)]
         except KeyError:
