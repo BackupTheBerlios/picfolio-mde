@@ -11,7 +11,11 @@ class StoreCollection:
     def __getdirname(self, f):
         if os.path.isdir(f):
             f = f + '/'
-        return os.path.dirname(f)
+        dirname = os.path.dirname(f)
+        if dirname == "":
+            return "."
+        else:
+            return dirname
 
     def open(self, filename):
         dirname = self.__getdirname(filename)
@@ -32,6 +36,8 @@ class StoreCollection:
         return store.get_item(filename)
 
     def getstore(self, filename):
+        print filename
+        print self.__getdirname(filename)
         try:
             store = self.__stores[self.__getdirname(filename)]
         except KeyError:
