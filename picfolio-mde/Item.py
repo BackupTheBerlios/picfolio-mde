@@ -62,6 +62,9 @@ class Item:
             if not desc_element.hasChildNodes():
                 value = ""
             else:
+                for e in xmlutils.get_all_child_elements(desc_element):
+                    if e.hasAttribute("xmlns"):
+                        e.removeAttribute("xmlns")
                 value = desc_element.toxml()
                 value = re.sub("^<description>|</description>$", "",
                                value)
@@ -79,6 +82,9 @@ class Item:
         # Here, I am assuming that the content of the description element
         # is plain old XHTML; we have a namespace issue here; I need
         # to discuss that on the Picfolio mailing list
+        # Setting the XHTML 1.0 namespace on all the elements
+        for e in xmlutils.get_all_child_elements(desc_element):
+            e.setAttribute("xmlns", "http://www.w3.org/1999/xhtml")
         return desc_element
 
     def set_description(self, value):
