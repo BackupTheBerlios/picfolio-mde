@@ -9,11 +9,10 @@ from Store import Store
 from CommandlineInterface import CommandlineInterface
 from TextInterface import TextInterface
 from GtkInterface import GtkInterface,GtkUnavailable
-
-VERSION = "0.2"
+from Version import Version
 
 def usage(exitcode = 0):
-    print "picfolio-metadata %s" % VERSION
+    print "picfolio-metadata %s" % Version.v
     print "(c) 2003-2004 Hugo Haas <hugo@larve.net>"
     print """
 Usage:
@@ -77,7 +76,7 @@ def main():
             ui.enter_metadata(arg, has_title, title, has_desc, description)
     elif use_gtk:
         try:
-            ui = GtkInterface(picfolio, args, VERSION)
+            ui = GtkInterface(picfolio, args)
             # Not reached
             sys.exit(0)
         except GtkUnavailable:

@@ -11,6 +11,7 @@ try:
 except:
     has_gtk = 0
 from UI import UI
+from Version import Version
 
 # This should not depend on sys.argv[0]; GtkInterface could be used in lots
 # of different ways @@@
@@ -18,8 +19,7 @@ GLADE_INTERFACE = re.sub("(/)?[^/]+$", "\\1picfolio-meta-data-editor.glade", sys
 
 class GtkInterface(UI):
 
-    # The way I'm handling the version here is not super-clean @@@
-    def __init__ (self, store, pics, version):
+    def __init__ (self, store, pics):
         if has_gtk == 0:
             raise GtkUnavailable
         UI.__init__(self, store)
@@ -46,7 +46,7 @@ class GtkInterface(UI):
         self.aboutbox= self.gladexml.get_widget("AboutBox")
         self.progressBar = self.gladexml.get_widget("AnswerProgress")
         abouttitle = self.gladexml.get_widget("AboutTitle")
-        abouttitle.set_label(re.sub("VERSION", version, abouttitle.get_label()))
+        abouttitle.set_label(re.sub("VERSION", Version.v, abouttitle.get_label()))
         self.args = pics
         if len(self.args) > 0:
             self.progress_step = 1.0 / len(self.args)
