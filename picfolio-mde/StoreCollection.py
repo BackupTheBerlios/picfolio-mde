@@ -39,6 +39,12 @@ class StoreCollection:
             store = self.__stores[self.__getdirname(filename)]
         return store
 
+    def is_dirty(self):
+        for s in self.__stores:
+            if s.is_dirty():
+                return 1
+        return 0
+
     def save(self, p):
         for s in self.__stores:
             s.save(p)

@@ -138,7 +138,7 @@ class GtkInterface(UI):
     def savenext(self, obj):
         self.savenext(obj)
         self.next(obj)
-        self.saveable(self.store.is_dirty())
+        self.saveable(self.stores.is_dirty())
 
     def savequit(self, obj):
         self.save(obj)
@@ -160,8 +160,8 @@ class GtkInterface(UI):
             self.quit(obj)
 
     def save_store(self, obj):
-        self.store.save(self.info)
-        self.saveable(self.store.is_dirty())
+        self.stores.save(self.info)
+        self.saveable(self.stores.is_dirty())
 
     def status_show(self, context, str):
         cid = self.status.get_context_id(context)
