@@ -6,31 +6,149 @@
 # Todo:
 # - GTK interface
 
+from __future__ import division
 import sys
 import xml
 import getopt
+import re
 from xml.dom.minidom import parse
+try:
+    import gtk
+    import gtk.glade
+    no_gtk = 0
+except:
+    no_gtk = 1
 
-VERSION = "0.1"
-
-#############################################################################
-
-class Debug:
-    def __init__ (self, print_function, level):
-        self.__level = level
-        self.__print_function = print_function
-
-    def out(self, level, str):
-        if (self.__level >= level):
-            self.__print_function(str)
-
+VERSION = "0.2"
+GLADE_INTERFACE = re.sub("(/)?[^/]+$", "\\1picfolio-meta-data-editor.glade", sys.argv[0])
 
 #############################################################################
 
 class UI:
-    def __init__ (self, store, debuglevel):
+    def __init__ (self, store):
         self.store = store
-    
+
+#############################################################################
+
+class Gtkinterface(UI):
+
+    def __init__ (self, store, pics):
+        UI.__init__(self, store)
+        self.gladexml = gtk.glade.XML(GLADE_INTERFACE)
+        dic = { "on_quit1_activate" : self.quit,
+                "on_quit_without_saving2_activate" : self.die,
+                "on_save1_activate" : self.save_store,
+                "on_main_destroy" : self.die,
+                "on_SaveButton_clicked" : self.savenext,
+                "on_SkipButton_clicked" : self.next,
+                "on_about1_activate" : self.about,
+                "on_closebutton1_clicked" : self.about_close,
+                }
+        self.gladexml.signal_autoconnect(dic)
+        self.status = self.gladexml.get_widget("Status")
+        self.name = self.gladexml.get_widget("ImageName")
+        self.title = self.gladexml.get_widget("TitleField")
+        self.desc = self.gladexml.get_widget("DescriptionField")
+        self.image = self.gladexml.get_widget("Image")
+        self.saveButton= self.gladexml.get_widget("SaveButton")
+        self.skipButton= self.gladexml.get_widget("SkipButton")
+        self.aboutbox= self.gladexml.get_widget("AboutBox")
+        self.progressBar = self.gladexml.get_widget("AnswerProgress")
+        abouttitle = self.gladexml.get_widget("AboutTitle")
+        abouttitle.set_label(re.sub("VERSION", VERSION, abouttitle.get_label()))
+        self.args = pics
+        if len(self.args) > 0:
+            self.progress_step = 1.0 / len(self.args)
+            self.show_picturedata(self.args[0])
+            self.args = self.args[1:]
+        else:
+            self.error("No image specified")
+            sys.exit(0)
+        gtk.main()
+        sys.exit(0)
+
+    def about(self, obj):
+        self.aboutbox.run()
+
+    def about_close(self,obj):
+        self.aboutbox.hide()
+
+    def show_image(self):
+        if self.pixbuf == None:
+            return
+        else:
+            pb = self.pixbuf
+        rect = self.image.get_allocation()
+        area_ratio = rect.width / rect.height
+        image_ratio = pb.get_width() / pb.get_height()
+        if (area_ratio <= image_ratio):
+            w = rect.width
+            h = w / image_ratio
+        else:
+            h = rect.height
+            w = h * image_ratio
+        self.image.set_from_pixbuf(pb.scale_simple(int(w), int(h), gtk.gdk.INTERP_NEAREST))
+
+    def show_picturedata(self, filename):
+        self.filename = filename
+        item = self.store.get_item(filename)
+        if item == None:
+            self.error("%s is not in %s" % filename, self.store.file())
+        self.name.set_text(item.get_name())
+        self.title.set_text(item.get_title(1))
+        self.desc.set_text(item.get_description(1))
+        self.title.grab_focus()
+        if filename != None:
+            self.pixbuf = gtk.gdk.pixbuf_new_from_file(item.get_name())
+        else:
+            self.pixbuf = None
+        self.show_image()
+        if len(self.args) == 1:
+            self.saveButton.set_label("Save and quit")
+            self.skipButton.set_label("Skip and quit")
+            self.progressBar.set_fraction(1)
+        else:
+            self.progressBar.set_fraction(self.progressBar.get_fraction() + self.progress_step)
+        self.info("%s info loaded" % filename)
+
+    def savenext(self, obj):
+        item = self.store.get_item(self.filename)
+        item.set_title(self.title.get_text())
+        item.set_description(self.desc.get_text())
+        self.next(obj)
+
+    def next(self, obj):
+        if len(self.args) > 0:
+            self.show_picturedata(self.args[0])
+            self.args = self.args[1:]
+        else:
+            self.quit(obj)
+
+    def save_store(self, obj):
+        self.store.save(self.info)
+
+    def status_show(self, context, str):
+        cid = self.status.get_context_id(context)
+        self.status.push(cid, str)
+        
+    def info(self, str):
+        self.status_show("info", str)
+
+    def error(self, str):
+        self.status_show("error", str)
+
+    def quit(self, obj):
+        self.save_store(obj)
+        self.close_ui(obj)
+
+    def die(self, obj):
+        # Confirm @@@
+        self.close_ui(obj)
+
+    def close_ui(self, obj):
+        gtk.main_quit()
+        sys.exit(0)
+
 
 #############################################################################
 
@@ -117,8 +235,11 @@ class Item:
         else:
             raise UnknownElementError
 
-    def get_title(self):
-        return self.__node.getAttribute("title")
+    def get_title(self, nonone = 0):
+        value = self.__node.getAttribute("title")
+        if nonone and value == None:
+            value = ""
+        return value
 
     def set_title(self, value):
         if value == self.get_title():
@@ -140,12 +261,15 @@ class Item:
                 return None
         return None
 
-    def get_description(self):
+    def get_description(self, nonone = 0):
         desc_element = self.__get_description_element()
         if desc_element != None and desc_element.hasChildNodes() and desc_element.firstChild.nodeType == xml.dom.Node.TEXT_NODE:
-            return desc_element.firstChild.data
+            value = desc_element.firstChild.data
         else:
-            return None
+            value = None
+        if nonone and value == None:
+            value = ""
+        return value
 
     def set_description(self, value):
         if value == self.get_description():
@@ -248,10 +372,11 @@ def main():
     args = sys.argv[1:]
     # optlist broke -d / -D
     try:
-        optlist, args = getopt.getopt(args, 'f:t:d:Dh',
+        optlist, args = getopt.getopt(args, 'f:t:d:Dgh',
                                       ["title=",
                                        "description=",
                                        "directory",
+                                       "gtk",
                                        "help"])
     except getopt.error, msg:
         print >>sys.stderr, "ERROR: %s\n" % msg
@@ -260,6 +385,7 @@ def main():
     directory = 0
     has_title = 0
     has_desc = 0
+    use_gtk = 0
     title = None
     description = None
     for o in optlist:
@@ -276,16 +402,26 @@ def main():
             has_desc = 1
             description = value
         elif name in ('-D', '--directory'):
-            args = args + [ None ]
+            args = [ None ] + args
+        elif name in ('-g', '--gtk'):
+            use_gtk = 1
         elif name in ('-h', '--help'):
             usage()
     picfolio = Store(file)
     if cli:
-        ui = Commandline(picfolio, 5)
+        ui = Commandline(picfolio)
         for arg in args:
             ui.enter_metadata(arg, has_title, title, has_desc, description)
+    elif use_gtk:
+        if no_gtk:
+            print "GTK not available"
+            sys.exit(1)
+        else:
+            ui = Gtkinterface(picfolio, args)
+            # Not reached
+            sys.exit(0)
     else:
-        ui = Textui(picfolio, 5)
+        ui = Textui(picfolio)
         for arg in args:
             ui.enter_metadata(arg)
     picfolio.save(ui.info)
