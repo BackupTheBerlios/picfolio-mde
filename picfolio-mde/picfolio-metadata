@@ -9,7 +9,7 @@ from Store import Store
 from CommandlineInterface import CommandlineInterface
 from TextInterface import TextInterface
 from GtkInterface import GtkInterface,GtkUnavailable
-from Version import Version
+import Version
 
 def usage(exitcode = 0):
     print "picfolio-metadata %s" % Version.v

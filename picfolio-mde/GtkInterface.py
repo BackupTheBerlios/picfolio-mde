@@ -11,7 +11,7 @@ try:
 except:
     has_gtk = 0
 from UI import UI
-from Version import Version
+import Version
 
 # This should not depend on sys.argv[0]; GtkInterface could be used in lots
 # of different ways @@@
