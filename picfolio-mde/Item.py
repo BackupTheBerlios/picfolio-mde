@@ -2,6 +2,7 @@
 # License: GPLv2
 
 import xml
+import xmlutils
 
 class Item:
     def __init__(self, store, node):
@@ -32,20 +33,36 @@ class Item:
         self.__store.dirty()
 
     def __get_description_element(self):
+        # We assume that the description element is either:
+        # <description>foo</description>
+        # or:
+        # <description><para>foo</para></description>
+        # We return the first one which matches
+        # There should be only one anyway
         children = self.__node.childNodes
         for node in children:
-            # Here I assume that description is a text node; I am not sure
-            # it's a good assumption
-            if node.nodeType == xml.dom.Node.ELEMENT_NODE and node.tagName == "description":
-                return node
+            if node.nodeType != xml.dom.Node.ELEMENT_NODE or node.tagName != "description":
+                continue
+            if node.hasChildNodes() and len(node.childNodes) == 1:
+                if xmlutils.hasChildTextNode(node):
+                    return node
+                child = node.firstChild
+                if child.nodeType == xml.dom.Node.ELEMENT_NODE and child.tagName == "para" and xmlutils.hasChildTextNode(child):
+                    return node
             else:
-                return None
+                return node
         return None
 
     def get_description(self, nonone = 0):
         desc_element = self.__get_description_element()
-        if desc_element != None and desc_element.hasChildNodes() and desc_element.firstChild.nodeType == xml.dom.Node.TEXT_NODE:
-            value = desc_element.firstChild.data
+        if desc_element != None:
+            if desc_element.firstChild.nodeType == xml.dom.Node.ELEMENT_NODE:
+                # para
+                node = desc_element.firstChild
+            else:
+                # no para
+                node = desc_element
+            value = xmlutils.getChildTextNode(node)
         else:
             value = None
         if nonone and value == None:
@@ -56,17 +73,24 @@ class Item:
         if value == self.get_description():
             return
         desc_element = self.__get_description_element()
-        if desc_element == None:
-            desc = self.__store.dom.createElement("description")
+        if value != "":
+            # Save a <description><para>foo</para></description>
+            para = self.__store.dom.createElement("para")
             desctext = self.__store.dom.createTextNode(value)
-            desc.appendChild(desctext)
-            if self.__node.firstChild:
-                self.__node.insertBefore(desc, self.__node.firstChild)
+            para.appendChild(desctext)
+            if desc_element != None:
+                # Replacing 
+                desc_element.removeChild(desc_element.firstChild)
+                desc_element.appendChild(para)
             else:
-                self.__node.appendChild(desc)
+                desc = self.__store.dom.createElement("description")
+                desc.appendChild(para)
+                # Place it first
+                if self.__node.hasChildNodes():
+                    self.__node.insertBefore(desc, self.__node.firstChild)
+                else:
+                    self.__node.appendChild(desc)
         else:
-            if value != "":
-                desc_element.firstChild.data = value
-            else:
+            if desc_element != None:
                 self.__node.removeChild(desc_element)
         self.__store.dirty()
