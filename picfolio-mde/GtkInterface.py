@@ -149,8 +149,9 @@ class GtkInterface(UI):
         except NotValid:
             self.error("Data not valid")
             return
+        item = self.stores.get_item(self.filename, self)
         UI.save_previous(self, item)
-        self.samenext.is_sensitive(1)
+        self.sameButton.set_sensitive(1)
         self.next(obj)
         self.saveable(self.stores.is_dirty())
 
@@ -166,7 +167,7 @@ class GtkInterface(UI):
         item = UI.get_previous(self)
         self.title.entry.set_text(item.get_title(1))
         self.__textview_set(self.desc, item.get_description(1))
-        self.next(obj)
+        self.savenext(obj)
 
     def next(self, obj):
         item = self.stores.get_item(self.filename, self)
